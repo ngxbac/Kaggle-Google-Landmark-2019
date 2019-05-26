@@ -10,8 +10,8 @@ def load_image(path):
     try:
         image = cv2.imread(path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # print("OK")
     except:
-        print(path)
         image = np.zeros((256, 256, 3)).astype(np.float32)
     return image
 
@@ -23,7 +23,7 @@ class LandmarkDataset(Dataset):
         self.transform = transform
         self.mode = mode
 
-        if stage == 1:
+        if self.mode == 'train':
             le = LabelEncoder()
             self.df['landmark_id'] = le.fit_transform(self.df['landmark_id'])
 
@@ -37,6 +37,8 @@ class LandmarkDataset(Dataset):
         else:
             self.labels = [0] * len(self.ids)
 
+        self.count = 0
+
     def __len__(self):
         return len(self.df)
 
@@ -46,6 +48,9 @@ class LandmarkDataset(Dataset):
         # label = np.asarray(label).astype(np.float32)
 
         image = load_image(os.path.join(self.root, id + '.jpg'))
+        if image.sum() == 0:
+            self.count += 1
+            print(self.count)
         if self.transform:
             image = self.transform(image=image)['image']
             image = np.transpose(image, (2, 0, 1)).astype(np.float32)
