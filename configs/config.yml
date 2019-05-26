@@ -1,0 +1,63 @@
+model_params:
+  fp16: false
+  model: FewShotModel
+  extractor_name: resnet50
+  num_classes: 92726
+  n_embedding: 2048
+  scale: True
+
+args:
+  expdir: "src"
+  logdir: &logdir "./logs/stage1"
+  baselogdir: "./logs/stage1_base"
+
+stages:
+
+  state_params:
+    main_metric: &reduce_metric accuracy01
+    minimize_metric: False
+
+  data_params:
+    num_workers: 8
+    batch_size: 128
+
+    train_csv: '/raid/bac/kaggle/landmark/csv/train_popular.csv.gz'
+    valid_csv: '/raid/bac/kaggle/landmark/csv/train_popular.csv.gz'
+    datapath: "/raid/data/kaggle/landmark_recognition/new_data/train/"
+
+  criterion_params:
+    criterion: FocalLoss
+
+  # train head
+  stage1:
+
+    state_params:
+      num_epochs: 9
+
+    optimizer_params:
+      optimizer: Adam
+      lr: 0.001
+      weight_decay: 0.0001
+
+    scheduler_params:
+      scheduler: MultiStepLR
+      milestones: [4]
+      gamma: 0.1
+
+    callbacks_params: &callbacks
+      loss:
+        callback: MyLossCallback
+      optimizer:
+        callback: OptimizerCallback
+      accuracy:
+        callback: AccuracyCallback
+        accuracy_args: [1]
+      scheduler:
+        callback: SchedulerCallback
+        reduce_metric: *reduce_metric
+      saver:
+        callback: CheckpointCallback
+        save_n_best: 10
+      iter_saver:
+        callback: IterCheckpointCallback
+        n_iters: 2500
