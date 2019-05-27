@@ -41,6 +41,14 @@ if __name__ == '__main__':
     train_df = pd.read_csv('/raid/bac/kaggle/landmark/csv/train_popular.csv.gz', usecols=['landmark_id'])
     le = LabelEncoder()
     train_df['landmark_id'] = le.fit_transform(train_df['landmark_id'])
+    all_class = le.classes_
+
+    i2c = {}
+    for i, cls in enumerate(all_class):
+        i2c[i] = cls
+
+
+    # assert le.inverse_transform([2106])[0] == i2c[2106]
 
     model_name = 'resnet50'
 
@@ -65,7 +73,7 @@ if __name__ == '__main__':
         n_embedding=2048
     )
 
-    checkpoint = "/raid/bac/kaggle/logs/landmark/resnet50/checkpoints//stage1.iter.112500.pth"
+    checkpoint = "/raid/bac/kaggle/logs/landmark/resnet50/checkpoints//stage1.5.pth"
     checkpoint = torch.load(checkpoint)
     model.load_state_dict(checkpoint['model_state_dict'])
     model = model.to(device)
@@ -78,7 +86,7 @@ if __name__ == '__main__':
 
     pred_original_cls = []
     for cls in tqdm(pred_cls, total=len(pred_cls)):
-        pred_original_cls.append(le.inverse_transform([cls])[0])
+        pred_original_cls.append(i2c[cls])
 
     submission = dataset.df.copy()
 
@@ -88,7 +96,7 @@ if __name__ == '__main__':
 
     submission['landmarks'] = landmarks
     os.makedirs('submission', exist_ok=True)
-    submission.to_csv(f'./submission/{model_name}_kfold.csv', index=False)
+    submission.to_csv(f'./submission/{model_name}_epoch5.csv', index=False)
 
 
 

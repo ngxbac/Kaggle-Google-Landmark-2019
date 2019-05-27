@@ -1,7 +1,7 @@
 model_params:
   fp16: false
   model: FewShotModel
-  extractor_name: resnet50
+  extractor_name: se_resnext50_32x4d
   num_classes: 92726
   n_embedding: 2048
   scale: True
@@ -21,8 +21,8 @@ stages:
     num_workers: 8
     batch_size: 128
 
-    train_csv: '/raid/bac/kaggle/landmark/csv/train_popular.csv.gz'
-    valid_csv: '/raid/bac/kaggle/landmark/csv/train_popular.csv.gz'
+    train_csv: '/raid/bac/kaggle/landmark/csv/train_92k.csv'
+    valid_csv: '/raid/bac/kaggle/landmark/csv/valid_92k.csv'
     datapath: "/raid/data/kaggle/landmark_recognition/new_data/train/"
 
   criterion_params:

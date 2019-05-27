@@ -1,3 +1,4 @@
+import torch.nn.functional as F
 import torch
 import torch.nn as nn
 from cnn_finetune import make_model
@@ -11,7 +12,7 @@ class FewShotModel(nn.Module):
         self.n_features = self.extractor.n_features
         self.embedding = Embedding(self.n_features, n_embedding)
         self.classifier = Classifier(n_embedding, num_classes)
-        self.s = nn.Parameter(torch.FloatTensor([10]))
+        self.s = nn.Parameter(torch.FloatTensor([10]), requires_grad=True)
         self.norm = norm
         self.scale = scale
 
@@ -19,7 +20,7 @@ class FewShotModel(nn.Module):
         x = self.extractor(x)
         x = self.embedding(x)
         if self.norm:
-            x = self.l2_norm(x)
+            x = F.normalize(x)
         if self.scale:
             x = self.s * x
         x = self.classifier(x)
@@ -106,12 +107,10 @@ class Embedding(nn.Module):
 class Classifier(nn.Module):
     def __init__(self, n_embedding, num_classes):
         super(Classifier,self).__init__()
-        self.fc = nn.Linear(n_embedding, num_classes)
-
+        self.fc = nn.Linear(n_embedding, num_classes, bias=None)
         nn.init.xavier_uniform_(self.fc.weight.data)
-        if self.fc.bias is not None:
-            self.fc.bias.data.zero_()
 
     def forward(self, x):
+        self.fc.weight.data = F.normalize(self.fc.weight.data)
         x = self.fc(x)
         return x
