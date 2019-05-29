@@ -1,3 +1,4 @@
+import torch
 from typing import Mapping, Any
 from catalyst.dl.experiments import Runner
 

@@ -36,7 +36,7 @@ def predict(model, loader):
 
 if __name__ == '__main__':
 
-    test_csv = '/raid/data/kaggle/landmark_recognition/new_data/recognition_sample_submission.csv'
+    test_csv = '/raid/bac/kaggle/landmark/csv/recognition_sample_submission.csv'
 
     train_df = pd.read_csv('/raid/bac/kaggle/landmark/csv/train_popular.csv.gz', usecols=['landmark_id'])
     le = LabelEncoder()
@@ -50,12 +50,12 @@ if __name__ == '__main__':
 
     # assert le.inverse_transform([2106])[0] == i2c[2106]
 
-    model_name = 'resnet50'
+    model_name = 'se_resnext50_32x4d'
 
     # Dataset
     dataset = LandmarkDataset(
         df=test_csv,
-        root='/raid/data/kaggle/landmark_recognition/new_data/test/',
+        root='/raid/data/kaggle/landmark_recognition/new_data/test_state2_2/',
         transform=valid_aug(224),
         mode='infer'
     )
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         n_embedding=2048
     )
 
-    checkpoint = "/raid/bac/kaggle/logs/landmark/resnet50/checkpoints//stage1.5.pth"
+    checkpoint = "/raid/bac/kaggle/logs/landmark/resume2/se_resnext50_32x4d/checkpoints//stage1.4.pth"
     checkpoint = torch.load(checkpoint)
     model.load_state_dict(checkpoint['model_state_dict'])
     model = model.to(device)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     submission['landmarks'] = landmarks
     os.makedirs('submission', exist_ok=True)
-    submission.to_csv(f'./submission/{model_name}_epoch5.csv', index=False)
+    submission.to_csv(f'./submission/{model_name}_stage2_resume2_epoch4_from_0.csv', index=False)
 
 
 

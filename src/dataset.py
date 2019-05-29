@@ -23,13 +23,17 @@ class LandmarkDataset(Dataset):
         self.transform = transform
         self.mode = mode
 
-        if self.mode == 'train':
+        if self.mode == 'train' or self.mode == 'valid':
             le = LabelEncoder()
-            self.df['landmark_id'] = le.fit_transform(self.df['landmark_id'])
-
-        if self.mode == 'valid':
-            n_landmarks = self.df['landmark_id'].nunique()
-            self.df = self.df.sample(n_landmarks * 2, replace=False)
+            if os.path.isfile("class.npy"):
+                print("Load classes !!!")
+                classes = np.load("class.npy")
+                le.classes_ = classes
+                self.df['landmark_id'] = le.transform(self.df['landmark_id'])
+            else:
+                print("Saved classes")
+                self.df['landmark_id'] = le.fit_transform(self.df['landmark_id'])
+                np.save("class.npy", le.classes_)
 
         self.ids = self.df['id'].values
         if self.mode == 'train' or self.mode == 'valid':
