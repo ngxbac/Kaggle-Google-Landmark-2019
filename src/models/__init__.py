@@ -1,2 +1,2 @@
 from .base import *
-from .fewshort_model import FewShotModel
+from .fewshot_model import FewShotModel
