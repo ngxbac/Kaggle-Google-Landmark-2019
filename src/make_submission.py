@@ -52,37 +52,55 @@ if __name__ == '__main__':
 
     model_name = 'se_resnext50_32x4d'
 
-    # Dataset
-    dataset = LandmarkDataset(
-        df=test_csv,
-        root='/raid/data/kaggle/landmark_recognition/new_data/test_state2_2/',
-        transform=valid_aug(224),
-        mode='infer'
-    )
-
-    loader = DataLoader(
-        dataset=dataset,
-        batch_size=128,
-        shuffle=False,
-        num_workers=4,
-    )
-
     model = FewShotModel(
         extractor_name=model_name,
         num_classes=92726,
         n_embedding=2048
     )
 
-    checkpoint = "/raid/bac/kaggle/logs/landmark/resume2/se_resnext50_32x4d/checkpoints//stage1.4.pth"
+    checkpoint = "/raid/bac/kaggle/logs/landmark/resume2/se_resnext50_32x4d/checkpoints//stage1.3.pth"
     checkpoint = torch.load(checkpoint)
     model.load_state_dict(checkpoint['model_state_dict'])
-    model = model.to(device)
-    pred = predict(model, loader)
 
-    pred_cls = np.argmax(pred, axis=1)
+    tta_aug = [valid_aug_hflip(224), valid_aug(224)]
+
+    pred_tta = []
+    for i, tta in enumerate(tta_aug):
+        # Dataset
+        dataset = LandmarkDataset(
+            df=test_csv,
+            root='/raid/data/kaggle/landmark_recognition/new_data/test_state2_2/',
+            transform=tta,
+            mode='infer'
+        )
+
+        loader = DataLoader(
+            dataset=dataset,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+        # model = model.to(device)
+        # pred = predict(model, loader)
+        # pred_tta.append(pred)
+        # np.save(f'./submission/{model_name}_stage2_resume2_epoch4_tta_from_0_{i}.npy', pred)
+
+        pred = np.load(f'./submission/{model_name}_stage2_resume2_epoch4_tta_from_0_{i}.npy')
+        pred_tta.append(pred)
+        del pred
+
+    # import pdb
+    # pdb.set_trace()
+    pred = (pred_tta[0] + pred_tta[1]) / 2
+    pred_tta = pred
+    del pred
+    # pred_tta = np.asarray(pred_tta).mean(axis=0)
+
+    pred_cls = np.argmax(pred_tta, axis=1)
     confs = []
     for i, cls in enumerate(tqdm(pred_cls, total=len(pred_cls))):
-        confs.append(pred[i, cls])
+        confs.append(pred_tta[i, cls])
 
     pred_original_cls = []
     for cls in tqdm(pred_cls, total=len(pred_cls)):
@@ -96,7 +114,8 @@ if __name__ == '__main__':
 
     submission['landmarks'] = landmarks
     os.makedirs('submission', exist_ok=True)
-    submission.to_csv(f'./submission/{model_name}_stage2_resume2_epoch4_from_0.csv', index=False)
+    submission.to_csv(f'./submission/{model_name}_stage2_resume2_epoch4_tta_from_0.csv', index=False)
+    np.save(f'./submission/{model_name}_stage2_resume2_epoch4_tta_from_0.npy', pred_tta)
 
 
 
